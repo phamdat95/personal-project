@@ -54,6 +54,18 @@ public class UserController {
         return new ResponseEntity<User>(user1, HttpStatus.OK);
     }
 
+    @RequestMapping(method = RequestMethod.PATCH, value = "/user/password")
+    public ResponseEntity<User> changePassword (@RequestBody User user, HttpServletRequest request) {
+        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
+        User user1 = userService.findUserName(userName);
+        if (user1 == null) {
+            return new ResponseEntity<User>(HttpStatus.NO_CONTENT);
+        }
+        user1.setPassWord(user.getPassWord());
+        userService.save(user1);
+        return new ResponseEntity<User>(user1, HttpStatus.OK);
+    }
+
     @RequestMapping(method = RequestMethod.GET, value = "/logout")
     public ResponseEntity<List<String>> Logout(HttpServletRequest request) {
         String token = request.getHeader("authorization");
