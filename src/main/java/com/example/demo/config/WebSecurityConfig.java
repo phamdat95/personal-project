@@ -40,9 +40,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests().antMatchers("/").permitAll();
         http.antMatcher("/**").httpBasic().authenticationEntryPoint(restServicesEntryPoint()).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/logout").access("hasRole('user')")
-                .antMatchers(HttpMethod.POST, "/image/**").access("hasRole('user')")
-                .antMatchers(HttpMethod.PATCH, "/user/update").access("hasRole('user')")
+                .antMatchers(HttpMethod.GET, "/logout").access("hasRole('ROLE_USER')")
+                .antMatchers(HttpMethod.POST, "/image/", "/like/**", "/user/**", "/comment/**").access("hasRole('ROLE_USER')")
+                .antMatchers(HttpMethod.DELETE, "/unlike/**", "/image/delete/**").access("hasRole('ROLE_USER')")
+                .antMatchers(HttpMethod.PATCH, "/user/update", "/image/update/**").access("hasRole('ROLE_USER')")
                 .and().addFilterBefore(jwtAuthenticationTokenFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling().accessDeniedHandler(customAccessDeniedHandler());
     }

@@ -64,7 +64,7 @@ public class ImageController {
     @RequestMapping(method = RequestMethod.GET, value = "/image/get/{id}")
     public ResponseEntity<String> getLink (@PathVariable("id") Long id) {
         Image image = imageService.findById(id);
-        String url = "http://localhost:8080/images/" + image.getImageName() + "/raw";
+        String url = "http://localhost:8080/images/" + image.getId() + "/raw";
         return new ResponseEntity<String>(url, HttpStatus.OK);
     }
 

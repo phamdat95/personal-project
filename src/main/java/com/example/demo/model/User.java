@@ -22,7 +22,7 @@ public class User {
     private String lastName;
     private String role;
 
-    @JsonIgnoreProperties(value = {"user"}, allowSetters = true)
+    @JsonIgnoreProperties(value = {"user", "image"}, allowSetters = true)
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user",  orphanRemoval = true)
     private List<Comment> comments;
 

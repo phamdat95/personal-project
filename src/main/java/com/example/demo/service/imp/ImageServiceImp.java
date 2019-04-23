@@ -35,7 +35,7 @@ public class ImageServiceImp implements ImageService {
     @Override
     public void create(MultipartFile file, Image image) throws IOException {
         if (!file.isEmpty()){
-            String fileName = file.getOriginalFilename() + System.currentTimeMillis();
+            String fileName = System.currentTimeMillis() + file.getOriginalFilename();
             Files.copy(file.getInputStream(), Paths.get(UPLOAD, fileName));
             image.setImageName(fileName);
             imageRepository.save(image);

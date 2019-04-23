@@ -26,11 +26,12 @@ public class CommentController {
     private CommentService commentService;
 
     @RequestMapping(method = RequestMethod.POST, value = "/comment/{id}")
-    public ResponseEntity<Comment> addComment (@PathVariable("id") Long id, HttpServletRequest request, @RequestBody String mess){
+    public ResponseEntity<Comment> addComment (@PathVariable("id") Long id, HttpServletRequest request, @RequestBody Comment comment){
         String name = jwtService.getUsernameFromToken(request.getHeader("authorization"));
         User user = userService.findUserName(name);
         Image image = imageService.findById(id);
-        Comment comment = new Comment(mess, user, image);
+        comment.setImage(image);
+        comment.setUser(user);
         commentService.save(comment);
         return new ResponseEntity<Comment>(comment, HttpStatus.OK);
     }

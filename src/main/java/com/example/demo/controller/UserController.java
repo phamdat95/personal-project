@@ -45,9 +45,7 @@ public class UserController {
         if (user1 == null) {
             return new ResponseEntity<User>(HttpStatus.NO_CONTENT);
         }
-        user1.setUserName(user.getUserName());
         user1.setAddress(user.getAddress());
-        user1.setPassWord(user.getPassWord());
         user1.setEmail(user.getEmail());
         user1.setPhoneNumber(user.getPhoneNumber());
         user1.setFirstName(user.getFirstName());
@@ -61,5 +59,11 @@ public class UserController {
         String token = request.getHeader("authorization");
         UserServiceImp.blackList.add(token);
         return new ResponseEntity<List<String>>(UserServiceImp.blackList, HttpStatus.OK);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/user")
+    public ResponseEntity<List<User>> ListUser() {
+        List<User> users = userService.getList();
+        return new ResponseEntity<List<User>>(users, HttpStatus.OK);
     }
 }
