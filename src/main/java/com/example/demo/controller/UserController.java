@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.FbComponent.RestFB;
 import com.example.demo.configToken.JwtService;
 import com.example.demo.model.User;
 import com.example.demo.service.UserService;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -19,6 +21,8 @@ public class UserController {
     private UserService userService;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private RestFB restFb;
 
     @RequestMapping(method = RequestMethod.POST, value = "/resign")
     public ResponseEntity<User> createUser (@RequestBody User user){
@@ -77,5 +81,24 @@ public class UserController {
     public ResponseEntity<List<User>> ListUser() {
         List<User> users = userService.getList();
         return new ResponseEntity<List<User>>(users, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/login-facebook", method = RequestMethod.GET)
+    public ResponseEntity<String> loginFacebook(HttpServletRequest request) throws IOException {
+        String code = request.getParameter("code");
+        String accessToken = restFb.getToken(code);
+        List<User> users = userService.getList();
+        com.restfb.types.User user = restFb.getUserInfo(accessToken);
+        String token = jwtService.generateTokenLogin(user.getName(), "ROLE_USER");
+        for (User item: users) {
+            if (StringUtils.equals(item.getUserName(), user.getName())) {
+                return new ResponseEntity<String>(token, HttpStatus.OK);
+            }
+        }
+        User user1 = new User();
+        user1.setUserName(user.getName());
+        user1.setPassWord(""+user.getId());
+        userService.save(user1);
+        return new ResponseEntity<String>(token, HttpStatus.OK);
     }
 }

@@ -36,7 +36,7 @@ public class JwtAuthenticationTokenFilter extends UsernamePasswordAuthentication
             com.example.demo.model.User user = userService.findUserName(username);
             List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
             if (user != null) {
-                authorities.add(new SimpleGrantedAuthority(user.getRole()));
+                authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
                 boolean enabled = true;
                 boolean accountNonExpired = true;
                 boolean credentialsNonExpired = true;
