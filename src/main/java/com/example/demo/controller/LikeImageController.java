@@ -30,10 +30,7 @@ public class LikeImageController {
 
     @RequestMapping(method = RequestMethod.POST, value = "/like/{id}")
     public ResponseEntity<LikeImage> likeImage (@PathVariable("id") Long id, HttpServletRequest request) {
-        String name = jwtService.getUsernameFromToken(request.getHeader("authorization"));
-        User user = userService.findUserName(name);
-        Image image = imageService.findById(id);
-        LikeImage likeImage = new LikeImage(image.getImageName(), user);
+        LikeImage likeImage = getLikeImage(id, request);
         likeImageService.save(likeImage);
         return new ResponseEntity<LikeImage>(likeImage, HttpStatus.OK);
     }
@@ -42,5 +39,16 @@ public class LikeImageController {
     public ResponseEntity<String> unlikeImage (@PathVariable("id") Long id) {
         likeImageService.delete(id);
         return new ResponseEntity<String>("unlike success", HttpStatus.OK);
+    }
+
+    private LikeImage getLikeImage(Long id, HttpServletRequest request) {
+        User user = getUserLike(request);
+        Image image = imageService.findById(id);
+        return new LikeImage(image.getImageName(), user);
+    }
+
+    private User getUserLike(HttpServletRequest request) {
+        String name = jwtService.getUsernameFromToken(request.getHeader("authorization"));
+        return userService.findUserName(name);
     }
 }

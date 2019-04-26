@@ -3,7 +3,6 @@ package com.example.demo.service.imp;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -23,12 +22,7 @@ public class UserServiceImp implements UserService {
     @Override
     public User findUserName(String name) {
         List<User> users = getList();
-        for (User item: users) {
-            if (StringUtils.equals(item.getUserName(), name)) {
-                return item;
-            }
-        }
-        return null;
+        return users.stream().filter(i -> name.equals(i.getUserName())).findAny().orElse(null);
     }
 
     @Override

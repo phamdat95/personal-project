@@ -31,10 +31,9 @@ public class ImageController {
 
     @RequestMapping(value = "/image/",method = RequestMethod.POST)
     public ResponseEntity<String> createImage(@RequestParam(name = "file") MultipartFile file, HttpServletRequest request) throws IOException {
-        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
-        User user1 = userService.findUserName(userName);
+        User userCurrent = getUserFromToken(request);
         Image image = new Image();
-        image.setUser(user1);
+        image.setUser(userCurrent);
         imageService.create(file, image);
         return new ResponseEntity<String>("upload success", HttpStatus.OK);
     }
@@ -73,5 +72,10 @@ public class ImageController {
         Image image = imageService.findById(id);
         imageService.delete(image.getImageName());
         return new ResponseEntity<String>("delete success", HttpStatus.OK);
+    }
+
+    private User getUserFromToken(HttpServletRequest request) {
+        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
+        return userService.findUserName(userName);
     }
 }

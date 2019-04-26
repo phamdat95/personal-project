@@ -5,7 +5,6 @@ import com.example.demo.configToken.JwtService;
 import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 import com.example.demo.service.imp.UserServiceImp;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,49 +24,41 @@ public class UserController {
     private RestFB restFb;
 
     @RequestMapping(method = RequestMethod.POST, value = "/resign")
-    public ResponseEntity<User> createUser (@RequestBody User user){
+    public ResponseEntity<User> createUser(@RequestBody User user) {
         userService.save(user);
         return new ResponseEntity<User>(user, HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/login")
-    public ResponseEntity<String> login (@RequestBody User user){
-        List<User> users = userService.getList();
-        String result = "";
-        for (User item: users){
-            if (StringUtils.equals(user.getUserName(),item.getUserName()) &&
-            StringUtils.equals(user.getPassWord(), item.getPassWord())){
-                result = jwtService.generateTokenLogin(item.getUserName(), item.getRole());
-            }
+    public ResponseEntity<String> login(@RequestBody User user) {
+        User userCurrent = getUser(user);
+        if (userCurrent == null) {
+            return new ResponseEntity<String>("login fail", HttpStatus.NO_CONTENT);
         }
+        String result = jwtService.generateTokenLogin(userCurrent.getUserName(), userCurrent.getRole());
         return new ResponseEntity<String>(result, HttpStatus.OK);
     }
+
     @RequestMapping(method = RequestMethod.PATCH, value = "/user/update")
-    public ResponseEntity<User> updateUser (@RequestBody User user, HttpServletRequest request){
-        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
-        User user1 = userService.findUserName(userName);
-        if (user1 == null) {
+    public ResponseEntity<User> updateUser(@RequestBody User user, HttpServletRequest request) {
+        User userCurrent = getUserFromToken(request);
+        if (userCurrent == null) {
             return new ResponseEntity<User>(HttpStatus.NO_CONTENT);
         }
-        user1.setAddress(user.getAddress());
-        user1.setEmail(user.getEmail());
-        user1.setPhoneNumber(user.getPhoneNumber());
-        user1.setFirstName(user.getFirstName());
-        user1.setLastName(user.getLastName());
-        userService.save(user1);
-        return new ResponseEntity<User>(user1, HttpStatus.OK);
+        changeInfo(user, userCurrent);
+        userService.save(userCurrent);
+        return new ResponseEntity<User>(userCurrent, HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.PATCH, value = "/user/password")
-    public ResponseEntity<User> changePassword (@RequestBody User user, HttpServletRequest request) {
-        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
-        User user1 = userService.findUserName(userName);
-        if (user1 == null) {
+    public ResponseEntity<User> changePassword(@RequestBody User user, HttpServletRequest request) {
+        User userCurrent = getUserFromToken(request);
+        if (userCurrent == null) {
             return new ResponseEntity<User>(HttpStatus.NO_CONTENT);
         }
-        user1.setPassWord(user.getPassWord());
-        userService.save(user1);
-        return new ResponseEntity<User>(user1, HttpStatus.OK);
+        changePass(user, userCurrent);
+        userService.save(userCurrent);
+        return new ResponseEntity<User>(userCurrent, HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/logout")
@@ -85,20 +76,70 @@ public class UserController {
 
     @RequestMapping(value = "/login-facebook", method = RequestMethod.GET)
     public ResponseEntity<String> loginFacebook(HttpServletRequest request) throws IOException {
-        String code = request.getParameter("code");
-        String accessToken = restFb.getToken(code);
-        List<User> users = userService.getList();
-        com.restfb.types.User user = restFb.getUserInfo(accessToken);
-        String token = jwtService.generateTokenLogin(user.getName(), "ROLE_USER");
-        for (User item: users) {
-            if (StringUtils.equals(item.getUserName(), user.getName())) {
-                return new ResponseEntity<String>(token, HttpStatus.OK);
-            }
+        com.restfb.types.User user = getUserFb(request);
+        String token = getToken(user);
+        User existedUser = getExistedUser(user);
+        if (existedUser == null) {
+            return new ResponseEntity<String>(token, HttpStatus.OK);
         }
-        User user1 = new User();
-        user1.setUserName(user.getName());
-        user1.setPassWord(""+user.getId());
-        userService.save(user1);
+        User userAdded = makeUserFb(user);
+        userService.save(userAdded);
         return new ResponseEntity<String>(token, HttpStatus.OK);
+    }
+
+    public User getUserFromToken(HttpServletRequest request) {
+        String userName = jwtService.getUsernameFromToken(request.getHeader("authorization"));
+        return userService.findUserName(userName);
+    }
+
+    private void changePass(User user, User userCurrent) {
+        userCurrent.setPassWord(user.getPassWord());
+    }
+
+    private User makeUserFb(com.restfb.types.User user) {
+        User userAdded = new User();
+        userAdded.setUserName(user.getName());
+        userAdded.setPassWord("" + user.getId());
+        return userAdded;
+    }
+
+    private String getToken(com.restfb.types.User user) {
+        return jwtService.generateTokenLogin(user.getName(), "ROLE_USER");
+    }
+
+    private com.restfb.types.User getUserFb(HttpServletRequest request) throws IOException {
+        String accessToken = getAccessToken(request);
+        return restFb.getUserInfo(accessToken);
+    }
+
+    private String getAccessToken(HttpServletRequest request) throws IOException {
+        String code = request.getParameter("code");
+        return restFb.getToken(code);
+    }
+
+    private User getUser(User user) {
+        List<User> users = userService.getList();
+        return users.stream().filter(i -> user.getUserName().equals(i.getUserName()) &&
+                user.getPassWord().equals(i.getPassWord())).findAny().orElse(null);
+    }
+
+    private User getExistedUser(com.restfb.types.User user) {
+        List<User> users = userService.getList();
+        return users.stream().filter(i -> i.getUserName().equals(user.getName())).findAny().orElse(null);
+    }
+
+    private void changeInfo(User user, User userCurrent) {
+        if (user.getAddress() != null)
+            userCurrent.setAddress(user.getAddress());
+        if (user.getEmail() != null)
+            userCurrent.setEmail(user.getEmail());
+        if (user.getPhoneNumber() != null)
+            userCurrent.setPhoneNumber(user.getPhoneNumber());
+        if (user.getFirstName() != null)
+            userCurrent.setFirstName(user.getFirstName());
+        if (user.getLastName() != null)
+            userCurrent.setLastName(user.getLastName());
+        if (user.getSex() != null)
+            userCurrent.setSex(user.getSex());
     }
 }
