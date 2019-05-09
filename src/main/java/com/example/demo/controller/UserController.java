@@ -79,11 +79,12 @@ public class UserController {
         com.restfb.types.User user = getUserFb(request);
         String token = getToken(user);
         User existedUser = getExistedUser(user);
-        if (existedUser == null) {
+        if (existedUser != null) {
             return new ResponseEntity<String>(token, HttpStatus.OK);
         }
         User userAdded = makeUserFb(user);
         userService.save(userAdded);
+        System.out.println("create user");
         return new ResponseEntity<String>(token, HttpStatus.OK);
     }
 
@@ -98,8 +99,8 @@ public class UserController {
 
     private User makeUserFb(com.restfb.types.User user) {
         User userAdded = new User();
-        userAdded.setUserName(user.getName());
-        userAdded.setPassWord("" + user.getId());
+        userAdded.setUserName(user.getId());
+        userAdded.setPassWord("123123");
         return userAdded;
     }
 
